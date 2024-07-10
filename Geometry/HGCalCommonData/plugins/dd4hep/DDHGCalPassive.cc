@@ -101,7 +101,7 @@ struct HGCalPassive {
       double rinB = HGCalGeomTools::radius(zo, zFrontB, rMinFront, slopeB) + shiftBot;
       zim += moduleThick;
       for (unsigned int k = 0; k < tagSector.size(); ++k) {
-        std::string parentName = parentName + tagLayer[j] + tagSector[k];
+        std::string parentName = args.parentName() + tagLayer[j] + tagSector[k];
         double phi1 = phi0 + k * dphi;
         double phi2 = phi1 + dphi;
         double phi0 = phi1 + 0.5 * dphi;
@@ -111,18 +111,21 @@ struct HGCalPassive {
           xM = {rinB * cos(phi1), routF * cos(phi1), routF * cos(phi2), rinB * cos(phi2)};
           yM = {rinB * sin(phi1), routF * sin(phi1), routF * sin(phi2), rinB * sin(phi2)};
         } else {
-          xM = {rinB * cos(phi1),
-                routF * cos(phi1),
-                routF * cos(phi0),
-                routF * cos(phi2),
-                rinB * cos(phi2),
-                rinB * cos(phi0)};
-          yM = {rinB * sin(phi1),
-                routF * sin(phi1),
-                routF * sin(phi0),
-                routF * sin(phi2),
-                rinB * sin(phi2),
-                rinB * sin(phi0)};
+          // workaround for https://github.com/cms-sw/cmssw/issues/44931#issuecomment-2134850535
+          std::vector<double> xTmp = {rinB * cos(phi1),
+                                      routF * cos(phi1),
+                                      routF * cos(phi0),
+                                      routF * cos(phi2),
+                                      rinB * cos(phi2),
+                                      rinB * cos(phi0)};
+          std::vector<double> yTmp = {rinB * sin(phi1),
+                                      routF * sin(phi1),
+                                      routF * sin(phi0),
+                                      routF * sin(phi2),
+                                      rinB * sin(phi2),
+                                      rinB * sin(phi0)};
+          xM = std::move(xTmp);
+          yM = std::move(yTmp);
         }
         std::vector<double> zw = {-0.5 * thick, 0.5 * thick};
         std::vector<double> zx(2, 0), zy(2, 0), scale(2, 1.0);
