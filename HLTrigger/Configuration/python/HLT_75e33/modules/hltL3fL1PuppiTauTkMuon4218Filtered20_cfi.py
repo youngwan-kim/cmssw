@@ -1,6 +1,6 @@
 import FWCore.ParameterSet.Config as cms
 
-hltL3fL1TkSingleMu18Filtered20 = cms.EDFilter( "HLTMuonTrkL1TkMuFilter",
+hltL3fL1PuppiTauTkMuon4218Filtered20 = cms.EDFilter( "HLTMuonTrkL1TkMuFilter",
     
     inputCandCollection = cms.InputTag("hltPhase2L3MuonCandidates"),
     inputMuonCollection = cms.InputTag("hltPhase2L3Muons"),
