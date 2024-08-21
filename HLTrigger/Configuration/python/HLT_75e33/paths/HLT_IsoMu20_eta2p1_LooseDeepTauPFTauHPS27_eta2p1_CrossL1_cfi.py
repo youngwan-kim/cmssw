@@ -33,7 +33,7 @@ from ..modules.hltParticleFlowClusterECALUncorrectedUnseeded_cfi import *
 from ..modules.hltParticleFlowRecHitECALUnseeded_cfi import *
 from ..modules.hltPuppiTauTkMuon4218L1TkFilter_cfi import *
 from ..modules.hltL3crIsoL1TkSingleMu22TrkIsoRegionalNewFiltered0p07EcalHcalHgcalTrk_cfi import *
-from ..modules.hltL3fL1PuppiTauTkMuon4218Filtered20_cfi import *
+from ..modules.hltL3fL1TkSingleMu18Filtered20_cfi import *
 from ..modules.hltPhase2L3MuonsTrkIsoRegionalNewdR0p3dRVeto0p005dz0p25dr0p20ChisqInfPtMin0p0Cut0p07_cfi import *
 from ..sequences.HLTPhase2L3MuonGeneralTracksSequence_cfi import *
 
@@ -52,7 +52,7 @@ HLT_IsoMu20_eta2p1_LooseDeepTauPFTauHPS27_eta2p1_CrossL1 = cms.Path(
     hltPhase2L3MuonsEcalIsodR0p3dRVeto0p000 +
     hltPhase2L3MuonsHcalIsodR0p3dRVeto0p000 +
     hltPhase2L3MuonsHgcalLCIsodR0p2dRVetoEM0p00dRVetoHad0p02minEEM0p00minEHad0p00 +
-    hltL3fL1PuppiTauTkMuon4218Filtered20 +
+    hltL3fL1TkSingleMu18Filtered20 +
     hltL3crIsoL1TkSingleMu22EcalIso0p41 +        
     hltL3crIsoL1TkSingleMu22HcalIso0p40 +
     hltL3crIsoL1TkSingleMu22HgcalIso4p70 +
