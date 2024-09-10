@@ -363,7 +363,6 @@ fragment.schedule = cms.Schedule(*[
     fragment.HLT_PFHT200PT30_QuadPFPuppiJet_70_40_30_30_TriplePFPuppiBTagDeepFlavour_2p4,
     fragment.HLT_DoublePFPuppiJets128_DoublePFPuppiBTagDeepFlavour_2p4,
     fragment.HLT_IsoMu20_eta2p1_LooseDeepTauPFTauHPS27_eta2p1_CrossL1,
-    fragment.HLT_IsoMu20_eta2p1_LooseDeepTauPFTauHPS27_eta2p1_NoL1,
 
     fragment.L1T_SingleTkMuon_22,
     fragment.L1T_DoubleTkMuon_15_7,
