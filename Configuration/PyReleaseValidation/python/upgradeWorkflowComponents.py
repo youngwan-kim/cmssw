@@ -3814,6 +3814,8 @@ upgradeFragments = OrderedDict([
     ('QCDForPF_14TeV_TuneCP5_cfi', UpgradeFragment(Kby(50,100),'QCD_FlatPt_15_3000HS_14')),
     ('DYToLL_M-50_14TeV_pythia8_cff', UpgradeFragment(Kby(9,100),'DYToLL_M_50_14TeV')),
     ('DYToTauTau_M-50_14TeV_pythia8_tauola_cff', UpgradeFragment(Kby(9,100),'DYtoTauTau_M_50_14TeV')),
+    ('DYto2TautoETauh_Bin-MLL-50_TuneCP5_14TeV_madgraphMLM-pythia8_cfi', UpgradeFragment(Kby(9,100),'DYto2TautoETauh_14TeV')),
+    ('DYto2TautoMuTauh_Bin-MLL-50_TuneCP5_14TeV_madgraphMLM-pythia8_cfi', UpgradeFragment(Kby(9,100),'DYto2TautoMuTauh_14TeV')),
     ('ZEE_14TeV_TuneCP5_cfi', UpgradeFragment(Kby(9,100),'ZEE_14')),
     ('QCD_Pt_80_120_13TeV_TuneCUETP8M1_cfi', UpgradeFragment(Kby(9,100),'QCD_Pt_80_120_13')),
     ('H125GGgluonfusion_13TeV_TuneCP5_cfi', UpgradeFragment(Kby(9,50),'H125GGgluonfusion_13')),
