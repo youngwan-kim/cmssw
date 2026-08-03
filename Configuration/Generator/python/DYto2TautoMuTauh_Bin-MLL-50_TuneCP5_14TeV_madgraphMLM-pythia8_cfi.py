@@ -28,7 +28,7 @@ generator = cms.EDFilter("Pythia8ConcurrentHadronizerFilter",
                                  ElMuCut = cms.string(''),
                                  HadHadCut = cms.string(''),
                                  MuMuCut = cms.string(''),
-                                 MuHadCut = cms.string('Mu.Pt > 18 && Had.Pt > 16 && Mu.Eta < 3.0 && Had.Eta < 3.0'),
+                                 MuHadCut = cms.string('Mu.Pt > 18 && Had.Pt > 16 && Mu.Eta < 4.0 && Had.Eta < 4.0'),
                                  Final_States = cms.vstring(
                                      'MuHad'
                                  ),
