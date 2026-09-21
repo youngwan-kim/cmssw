@@ -32,12 +32,17 @@
 #include <vector>
 
 namespace {
-  // a single required object, reduced to what the histograms need
+
   struct LegObject {
     double pt;
     double eta;
+    double phi;
   };
-}  // namespace
+
+  enum Stage { kGen = 0, kL1, kHLT, kNStages };
+  constexpr const char* kStageSuffix[kNStages] = {"", "_l1", "_hlt"};
+  constexpr const char* kStageTitle[kNStages] = {"Gen", "Gen+L1", "Gen+L1+HLT"};
+}
 
 class TauTriggerValidator : public DQMEDAnalyzer {
 public:
@@ -75,19 +80,23 @@ private:
   const std::string hltProcessName_;
   const std::string label_;
   const std::string outFolder_;
+  const std::string l1SeedModule_;
 
   HLTConfigProvider hltConfig_;
   bool hltConfigInitialised_ = false;
   bool pathFound_ = false;
   unsigned pathIndex_ = 0;
 
-  // booked per leg object (index 0..nObjs_-1)
-  std::vector<MonitorElement*> h_pt_;
-  std::vector<MonitorElement*> h_eta_;
-  std::vector<MonitorElement*> hMatched_pt_;
-  std::vector<MonitorElement*> hMatched_eta_;
-  MonitorElement* h2d_ = nullptr;
-  MonitorElement* h2dMatched_ = nullptr;
+  bool l1Found_ = false;
+  unsigned l1ModuleIndex_ = 0;
+
+  struct StageHists {
+    std::vector<MonitorElement*> pt, eta, phi, ptEta, ptPhi, etaPhi;
+    MonitorElement* pt1Pt2 = nullptr;
+  };
+  StageHists hists_[kNStages];
+
+  void fillStage(Stage stage, const std::vector<LegObject>& objs);
 };
 
 TauTriggerValidator::TauTriggerValidator(const edm::ParameterSet& iConfig)
@@ -95,7 +104,8 @@ TauTriggerValidator::TauTriggerValidator(const edm::ParameterSet& iConfig)
       hltPathToCheck_(iConfig.getParameter<std::string>("hltPath")),
       hltProcessName_(iConfig.getParameter<std::string>("hltProcessName")),
       label_(iConfig.getParameter<std::string>("label")),
-      outFolder_(iConfig.getParameter<std::string>("outFolder")) {
+      outFolder_(iConfig.getParameter<std::string>("outFolder")),
+      l1SeedModule_(iConfig.getParameter<std::string>("l1SeedModule")) {
   const auto legPSets = iConfig.getParameter<std::vector<edm::ParameterSet>>("legs");
   for (auto const& legPSet : legPSets) {
     LegConfig leg;
@@ -121,11 +131,6 @@ TauTriggerValidator::TauTriggerValidator(const edm::ParameterSet& iConfig)
     nObjs_ += leg.multiplicity;
     legs_.push_back(leg);
   }
-
-  h_pt_.resize(nObjs_, nullptr);
-  h_eta_.resize(nObjs_, nullptr);
-  hMatched_pt_.resize(nObjs_, nullptr);
-  hMatched_eta_.resize(nObjs_, nullptr);
 }
 
 std::vector<LegObject> TauTriggerValidator::getLegCandidates(const edm::Event& iEvent, size_t legIdx) const {
@@ -138,7 +143,7 @@ std::vector<LegObject> TauTriggerValidator::getLegCandidates(const edm::Event& i
       return cands;
     for (auto const& jet : *genTaus) {
       if (jet.pt() > leg.ptMin && std::abs(jet.eta()) < leg.etaMax)
-        cands.push_back(LegObject{jet.pt(), jet.eta()});
+        cands.push_back(LegObject{jet.pt(), jet.eta(), jet.phi()});
     }
   } else {
     auto genParts = iEvent.getHandle(genLeptonTokens_[leg.leptonTokenIdx]);
@@ -152,7 +157,7 @@ std::vector<LegObject> TauTriggerValidator::getLegCandidates(const edm::Event& i
       if (!passFlag)
         continue;
       if (p.pt() > leg.ptMin && std::abs(p.eta()) < leg.etaMax)
-        cands.push_back(LegObject{p.pt(), p.eta()});
+        cands.push_back(LegObject{p.pt(), p.eta(), p.phi()});
     }
   }
 
@@ -183,46 +188,96 @@ void TauTriggerValidator::dqmBeginRun(const edm::Run& iRun, const edm::EventSetu
   if (!pathFound_) {
     edm::LogError("TauTriggerValidator") << "Path '" << hltPathToCheck_ << "' could not be found in the HLT menu "
                                          << "and will not be used.";
+    return;
+  }
+
+  auto stripFlags = [](const std::string& s) {
+    const auto pos = s.find_first_not_of("-!");
+    return pos == std::string::npos ? std::string() : s.substr(pos);
+  };
+
+  l1Found_ = false;
+  std::string l1Label;
+  const auto& labels = hltConfig_.moduleLabels(pathIndex_);
+  for (unsigned k = 0; k < labels.size(); ++k) {
+    const std::string name = stripFlags(labels[k]);
+    const bool isSeed = l1SeedModule_.empty() ? name.find("L1") != std::string::npos : name == l1SeedModule_;
+    if (isSeed) {
+      l1Label = name;
+      l1ModuleIndex_ = k;
+      l1Found_ = true;
+      break;
+    }
+  }
+  if (l1Found_) {
+    edm::LogPrint("TauTriggerValidator") << label_ << ": L1 seed of " << hltConfig_.triggerName(pathIndex_) << " is '"
+                                         << l1Label << "' (module " << l1ModuleIndex_ << ")";
+  } else {
+    edm::LogError("TauTriggerValidator") << label_ << ": no L1 seed module found in path "
+                                         << hltConfig_.triggerName(pathIndex_)
+                                         << ", the L1 level will stay empty. Set l1SeedModule to fix this.";
   }
 }
 
 void TauTriggerValidator::bookHistograms(DQMStore::IBooker& ibooker, edm::Run const&, edm::EventSetup const&) {
   ibooker.setCurrentFolder(outFolder_);
 
-  // Histogram basenames are deliberately label-independent (just "leg1_pt" etc.):
-  // each cross-trigger definition already gets its own outFolder, so the folder
-  // is what disambiguates DiTau/MuTau/ETau -- this lets a single DQMGenericClient
-  // harvester config with a wildcarded subDirs apply the same efficiency string
-  // list to every cross-trigger folder, the same convention TauValidator uses
-  // for its CutWP/CutID subfolders.
-  for (unsigned i = 0; i < nObjs_; ++i) {
-    const std::string idx = std::to_string(i + 1);
-    h_pt_[i] = ibooker.book1D("leg" + idx + "_pt", label_ + " gen leg " + idx + " p_{T};p_{T} [GeV];", 60, 0., 300.);
-    h_eta_[i] = ibooker.book1D("leg" + idx + "_eta", label_ + " gen leg " + idx + " #eta;#eta;", 60, -3., 3.);
-    hMatched_pt_[i] = ibooker.book1D(
-        "leg" + idx + "_pt_matched", label_ + " gen leg " + idx + " p_{T} (Matched);p_{T} [GeV];", 60, 0., 300.);
-    hMatched_eta_[i] =
-        ibooker.book1D("leg" + idx + "_eta_matched", label_ + " gen leg " + idx + " #eta (Matched);#eta;", 60, -3., 3.);
-  }
+  constexpr int nPt = 60, nEta = 60, nPhi = 32;
+  constexpr double ptMax = 300., etaMax = 3., phiMax = 3.2;
 
-  if (nObjs_ >= 2) {
-    h2d_ = ibooker.book2D("leg1pt_leg2pt",
-                          label_ + " gen leg1 vs leg2 p_{T};p_{T}^{leg1} [GeV];p_{T}^{leg2} [GeV]",
-                          60,
-                          0.,
-                          300.,
-                          60,
-                          0.,
-                          300.);
-    h2dMatched_ = ibooker.book2D("leg1pt_leg2pt_matched",
-                                 label_ + " gen leg1 vs leg2 p_{T} (Matched);p_{T}^{leg1} [GeV];p_{T}^{leg2} [GeV]",
-                                 60,
-                                 0.,
-                                 300.,
-                                 60,
-                                 0.,
-                                 300.);
+  for (int s = 0; s < kNStages; ++s) {
+    auto& h = hists_[s];
+    const std::string sfx = kStageSuffix[s];
+    const std::string stage = kStageTitle[s];
+
+    h.pt.assign(nObjs_, nullptr);
+    h.eta.assign(nObjs_, nullptr);
+    h.phi.assign(nObjs_, nullptr);
+    h.ptEta.assign(nObjs_, nullptr);
+    h.ptPhi.assign(nObjs_, nullptr);
+    h.etaPhi.assign(nObjs_, nullptr);
+
+    for (unsigned i = 0; i < nObjs_; ++i) {
+      const std::string idx = std::to_string(i + 1);
+      const std::string base = "leg" + idx;
+      const std::string title = label_ + " " + stage + " leg " + idx;
+
+      h.pt[i] = ibooker.book1D(base + "_pt" + sfx, title + " p_{T};p_{T} [GeV];", nPt, 0., ptMax);
+      h.eta[i] = ibooker.book1D(base + "_eta" + sfx, title + " #eta;#eta;", nEta, -etaMax, etaMax);
+      h.phi[i] = ibooker.book1D(base + "_phi" + sfx, title + " #phi;#phi;", nPhi, -phiMax, phiMax);
+      h.ptEta[i] = ibooker.book2D(
+          base + "_pt_eta" + sfx, title + ";p_{T} [GeV];#eta", nPt, 0., ptMax, nEta, -etaMax, etaMax);
+      h.ptPhi[i] = ibooker.book2D(
+          base + "_pt_phi" + sfx, title + ";p_{T} [GeV];#phi", nPt, 0., ptMax, nPhi, -phiMax, phiMax);
+      h.etaPhi[i] = ibooker.book2D(
+          base + "_eta_phi" + sfx, title + ";#eta;#phi", nEta, -etaMax, etaMax, nPhi, -phiMax, phiMax);
+    }
+
+    if (nObjs_ >= 2) {
+      h.pt1Pt2 = ibooker.book2D("leg1pt_leg2pt" + sfx,
+                                label_ + " " + stage + " leg1 vs leg2 p_{T};p_{T}^{leg1} [GeV];p_{T}^{leg2} [GeV]",
+                                nPt,
+                                0.,
+                                ptMax,
+                                nPt,
+                                0.,
+                                ptMax);
+    }
   }
+}
+
+void TauTriggerValidator::fillStage(Stage stage, const std::vector<LegObject>& objs) {
+  auto& h = hists_[stage];
+  for (unsigned i = 0; i < nObjs_; ++i) {
+    h.pt[i]->Fill(objs[i].pt);
+    h.eta[i]->Fill(objs[i].eta);
+    h.phi[i]->Fill(objs[i].phi);
+    h.ptEta[i]->Fill(objs[i].pt, objs[i].eta);
+    h.ptPhi[i]->Fill(objs[i].pt, objs[i].phi);
+    h.etaPhi[i]->Fill(objs[i].eta, objs[i].phi);
+  }
+  if (h.pt1Pt2)
+    h.pt1Pt2->Fill(objs[0].pt, objs[1].pt);
 }
 
 void TauTriggerValidator::analyze(const edm::Event& iEvent, const edm::EventSetup&) {
@@ -231,33 +286,26 @@ void TauTriggerValidator::analyze(const edm::Event& iEvent, const edm::EventSetu
   for (size_t i = 0; i < legs_.size(); ++i) {
     auto cands = getLegCandidates(iEvent, i);
     if (cands.size() < legs_[i].multiplicity)
-      return;
+      return;  // event does not satisfy the gen-level leg requirements
     requiredObjs.insert(requiredObjs.end(), cands.begin(), cands.end());
   }
 
-  // denominator: fill unconditionally once all legs are satisfied
-  for (unsigned i = 0; i < nObjs_; ++i) {
-    h_pt_[i]->Fill(requiredObjs[i].pt);
-    h_eta_[i]->Fill(requiredObjs[i].eta);
-  }
-  if (h2d_)
-    h2d_->Fill(requiredObjs[0].pt, requiredObjs[1].pt);
+  // Gen level :  every event with all required legs (TODO, add kinematic selections)
+  fillStage(kGen, requiredObjs);
 
-  // numerator: check if the configured HLT path accepts this event
   if (!pathFound_)
     return;
   auto triggerResults = iEvent.getHandle(triggerResultsToken_);
-  if (!triggerResults.isValid() || pathIndex_ >= triggerResults->size())
-    return;
-  if (!triggerResults->accept(pathIndex_))
+  if (!triggerResults.isValid() || pathIndex_ >= triggerResults->size() || !triggerResults->wasrun(pathIndex_))
     return;
 
-  for (unsigned i = 0; i < nObjs_; ++i) {
-    hMatched_pt_[i]->Fill(requiredObjs[i].pt);
-    hMatched_eta_[i]->Fill(requiredObjs[i].eta);
-  }
-  if (h2dMatched_)
-    h2dMatched_->Fill(requiredObjs[0].pt, requiredObjs[1].pt);
+  const bool passHLT = triggerResults->accept(pathIndex_);
+  const bool passL1 = l1Found_ && (passHLT || triggerResults->index(pathIndex_) > l1ModuleIndex_);
+
+  if (passL1)
+    fillStage(kL1, requiredObjs);
+  if (passHLT)
+    fillStage(kHLT, requiredObjs);
 }
 
 void TauTriggerValidator::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
@@ -268,6 +316,7 @@ void TauTriggerValidator::fillDescriptions(edm::ConfigurationDescriptions& descr
   desc.add<std::string>("hltPath");
   desc.add<std::string>("label");
   desc.add<std::string>("outFolder", "HLT/Tau/CrossTriggerValidation");
+  desc.add<std::string>("l1SeedModule", "");  // empty: first module of the path with "L1" in its label
 
   edm::ParameterSetDescription legDesc;
   legDesc.add<std::string>("objType");
