@@ -8,6 +8,7 @@
 <use name="DataFormats/HLTReco"/>
 <use name="DataFormats/HepMCCandidate"/>
 <use name="DataFormats/JetReco"/>
+<use name="DataFormats/Math"/>
 <use name="HLTrigger/HLTcore"/>
 <use name="Validation/HLTrigger"/>
 <flags EDM_PLUGIN="1"/>
