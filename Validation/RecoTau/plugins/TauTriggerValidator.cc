@@ -19,7 +19,7 @@
 //    to a leg. The gap between "_hlt" and "_matched" is how often the path fired
 //    on something other than the legs that were selected.
 //
-//  Author: Youngwan Kim, Sept. 2026
+//  Author: Youngwan Kim, Chihwan An, Sept. 2026
 //
 //********************************************************************************
 
@@ -99,6 +99,11 @@ private:
     unsigned multiplicity;
     double ptMin;
     double etaMax;
+    // extra cuts applied only when filling a histogram that doesn't itself draw
+    // the other variable: plateauEtaCut gates pt-only histograms, plateauPtCut
+    // gates eta-only histograms. Histograms that draw both (pt_eta) get neither.
+    double plateauEtaCut;
+    double plateauPtCut;
     std::string filterName;  // HLT filter whose trigger objects this leg is matched to
     double dR2limit;         // squared, as in HLTGenValSource
     int pdgId;                                // only used for "ele"/"mu"
@@ -176,6 +181,8 @@ TauTriggerValidator::TauTriggerValidator(const edm::ParameterSet& iConfig)
     leg.multiplicity = legPSet.getParameter<unsigned int>("multiplicity");
     leg.ptMin = legPSet.getParameter<double>("ptMin");
     leg.etaMax = legPSet.getParameter<double>("etaMax");
+    leg.plateauEtaCut = legPSet.getParameter<double>("plateauEtaCut");
+    leg.plateauPtCut = legPSet.getParameter<double>("plateauPtCut");
     leg.filterName = legPSet.getParameter<std::string>("filterName");
     leg.dR2limit = legPSet.getParameter<double>("dR2limit");
 
@@ -496,19 +503,33 @@ void TauTriggerValidator::bookHistograms(DQMStore::IBooker& ibooker, edm::Run co
 }
 
 void TauTriggerValidator::fill(StageHists& h, const std::vector<LegObject>& objs) {
+  // plateau cuts: a histogram that doesn't itself draw a variable gets that
+  // variable's plateau cut applied before filling, so e.g. the eta efficiency is
+  // measured at a fixed, well-above-threshold pt rather than mixing in the pt
+  // turn-on. A histogram drawing both pt and eta (pt_eta) gets neither.
+  auto etaOk = [this](const std::vector<LegObject>& o, unsigned i) {
+    return std::abs(o[i].eta) < legs_[slotLeg_[i]].plateauEtaCut;
+  };
+  auto ptOk = [this](const std::vector<LegObject>& o, unsigned i) { return o[i].pt > legs_[slotLeg_[i]].plateauPtCut; };
+
   for (unsigned i = 0; i < nObjs_; ++i) {
     if (!h.pt[i])
       continue;
-    h.pt[i]->Fill(objs[i].pt);
-    h.eta[i]->Fill(objs[i].eta);
+    if (etaOk(objs, i))
+      h.pt[i]->Fill(objs[i].pt);
+    if (ptOk(objs, i))
+      h.eta[i]->Fill(objs[i].eta);
     if (h.phi.empty())
       continue;
-    h.phi[i]->Fill(objs[i].phi);
+    if (etaOk(objs, i) && ptOk(objs, i))
+      h.phi[i]->Fill(objs[i].phi);
     h.ptEta[i]->Fill(objs[i].pt, objs[i].eta);
-    h.ptPhi[i]->Fill(objs[i].pt, objs[i].phi);
-    h.etaPhi[i]->Fill(objs[i].eta, objs[i].phi);
+    if (etaOk(objs, i))
+      h.ptPhi[i]->Fill(objs[i].pt, objs[i].phi);
+    if (ptOk(objs, i))
+      h.etaPhi[i]->Fill(objs[i].eta, objs[i].phi);
   }
-  if (h.pt1Pt2)
+  if (h.pt1Pt2 && etaOk(objs, 0) && etaOk(objs, 1))
     h.pt1Pt2->Fill(objs[0].pt, objs[1].pt);
 }
 
@@ -578,6 +599,9 @@ void TauTriggerValidator::fillDescriptions(edm::ConfigurationDescriptions& descr
   legDesc.add<unsigned int>("multiplicity", 1);
   legDesc.add<double>("ptMin", 20.);
   legDesc.add<double>("etaMax", 2.4);
+  // no extra cut by default: plateauEtaCut=999 never excludes, plateauPtCut=0 never excludes
+  legDesc.add<double>("plateauEtaCut", 999.);
+  legDesc.add<double>("plateauPtCut", 0.);
   // the HLT filter this leg is matched against. It has to be a saveTags module of
   // hltPath, otherwise its objects never reach the trigger summary.
   legDesc.add<std::string>("filterName", "");

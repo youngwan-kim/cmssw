@@ -28,7 +28,7 @@ process.validationClient = DQMEDHarvester("HLTGenValClient",
     subDirs        = cms.untracked.vstring("HLTGenVal"),
 )
 
-process.load("Validation.HLTrigger.hltTauTriggerPostProcessor_cff")
+process.load("Validation.RecoTau.hltTauTriggerPostProcessor_cff")
 
 process.load("DQMServices.Components.DQMFileSaver_cfi")
 process.dqmSaver.workflow = "/HLT/Validation/{}".format(options.outTag)
