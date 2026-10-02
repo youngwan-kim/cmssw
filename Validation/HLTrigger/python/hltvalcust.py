@@ -380,11 +380,7 @@ def add_hlt_validation_phaseII(process,hltProcessName=None,sampleLabel=""):
         ),
     )
     process.HLTValidationPath.insert(0,process.HLTGenResSource)
-
-    # standalone tau (cross-)trigger validator: event-level, multi-leg gen
-    # denominators (ditau, mutau, etau) matched against the actual HLT path
-    # decision, complementing HLTGenValSourceTAU's single-leg efficiency
-    process.load("Validation.HLTrigger.hltTauTriggerValidation_cff")
+    process.load("Validation.RecoTau.hltTauTriggerValidation_cff")
     process.HLTValidationPath += process.hltTauTriggerValidationSequence
 
     return process
