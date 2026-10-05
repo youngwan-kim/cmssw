@@ -94,9 +94,29 @@ hltTauTriggerValidationETau = _TauTriggerValidator(
     ),
 )
 
+# SingleTau: retain the turn-on by using the validator's low GEN pT default.
+hltTauTriggerValidationSingleTau = _TauTriggerValidator(
+    hltProcessName = "HLT",
+    hltPath = "HLT_LooseDeepTauPFTauHPS150_L1NN_eta2p1",
+    label = "SingleTau",
+    outFolder = "HLT/Tau/Validation/SingleTau",
+    ptMax = cms.double(1500.),
+    legs = cms.VPSet(
+        cms.PSet(
+            objType = cms.string("tau"),
+            multiplicity = cms.uint32(1),
+            ptMin = cms.double(20.),
+            etaMax = cms.double(2.1),
+            genCollection = cms.InputTag("tauGenJetsSelectorAllHadrons"),
+            filterName = cms.string("hltHpsPFTau150LooseTauWPDeepTau"),
+        ),
+    ),
+)
+
 hltTauTriggerValidationSequence = cms.Sequence(
     hltTauTriggerValidationDiTau
     + hltTauTriggerValidationDiTauChargedIso
     + hltTauTriggerValidationMuTau
     + hltTauTriggerValidationETau
+    + hltTauTriggerValidationSingleTau
 )

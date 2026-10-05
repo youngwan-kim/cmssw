@@ -36,8 +36,13 @@ def _entries(names, recipes):
     ]
 
 
-hltTauTriggerPostProcessor = DQMEDHarvester("DQMGenericClient",
-    subDirs = cms.untracked.vstring("HLT/Tau/Validation/*"),
+hltTauTriggerPostProcessorTwoLeg = DQMEDHarvester("DQMGenericClient",
+    subDirs = cms.untracked.vstring(
+        "HLT/Tau/Validation/DiTau",
+        "HLT/Tau/Validation/DiTauChargedIso",
+        "HLT/Tau/Validation/MuTau",
+        "HLT/Tau/Validation/ETau",
+    ),
     efficiency = cms.vstring(
         _entries(_names1D, _efficiencies)
         + _entries(_names2D, _efficiencies)
@@ -49,4 +54,25 @@ hltTauTriggerPostProcessor = DQMEDHarvester("DQMGenericClient",
     resolution = cms.vstring(),
     verbose = cms.untracked.uint32(0),
     outputFileName = cms.untracked.string("")
+)
+
+# SingleTau books no leg2, leg1pt_leg2pt, or single-matched-leg breakdown.
+_singleNames1D = [("leg1_" + v, "leg1 " + t) for v, t in _vars1D]
+_singleNames2D = [("leg1_" + v, "leg1 " + t) for v, t in _vars2D]
+_singleNamesBreakdown = [("leg1_" + v, "leg1 " + t) for v, t in _vars1D[:2]]
+hltTauTriggerPostProcessorSingleTau = hltTauTriggerPostProcessorTwoLeg.clone(
+    subDirs = cms.untracked.vstring("HLT/Tau/Validation/SingleTau"),
+    efficiency = cms.vstring(
+        _entries(_singleNames1D, _efficiencies)
+        + _entries(_singleNames2D, _efficiencies)
+        + _entries(_singleNamesBreakdown, _breakdown[:1])
+    ),
+    efficiencyProfile = cms.untracked.vstring(
+        [e.replace("Eff_", "EffProfile_", 1) for e in _entries(_singleNames1D, _efficiencies)]
+    ),
+)
+
+# Retain the entry point used by runValClient_cfg.py.
+hltTauTriggerPostProcessor = cms.Sequence(
+    hltTauTriggerPostProcessorTwoLeg + hltTauTriggerPostProcessorSingleTau
 )
