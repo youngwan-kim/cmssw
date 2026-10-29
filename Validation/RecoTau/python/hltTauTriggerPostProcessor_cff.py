@@ -1,5 +1,6 @@
 import FWCore.ParameterSet.Config as cms
 from DQMServices.Core.DQMEDHarvester import DQMEDHarvester
+from Validation.RecoTau.hltTauTriggerValidation_cff import hltTauTriggerValidators as _validators
 
 _efficiencies = (
     ("Eff_L1",         "L1 / Gen",          "{n}_l1",      "{n}"),
@@ -36,13 +37,16 @@ def _entries(names, recipes):
     ]
 
 
+# one DQM folder per validated path; a path selecting a single object has no leg2
+def _nObjs(v):
+    return sum(leg.multiplicity.value() for leg in v.legs)
+
+_twoLegDirs = [v.outFolder.value() for v in _validators if _nObjs(v) >= 2]
+_singleLegDirs = [v.outFolder.value() for v in _validators if _nObjs(v) == 1]
+
+
 hltTauTriggerPostProcessorTwoLeg = DQMEDHarvester("DQMGenericClient",
-    subDirs = cms.untracked.vstring(
-        "HLT/Tau/Validation/DiTau",
-        "HLT/Tau/Validation/DiTauChargedIso",
-        "HLT/Tau/Validation/MuTau",
-        "HLT/Tau/Validation/ETau",
-    ),
+    subDirs = cms.untracked.vstring(_twoLegDirs),
     efficiency = cms.vstring(
         _entries(_names1D, _efficiencies)
         + _entries(_names2D, _efficiencies)
@@ -56,12 +60,12 @@ hltTauTriggerPostProcessorTwoLeg = DQMEDHarvester("DQMGenericClient",
     outputFileName = cms.untracked.string("")
 )
 
-# SingleTau books no leg2, leg1pt_leg2pt, or single-matched-leg breakdown.
+# single-object paths book no leg2, leg1pt_leg2pt, or single-matched-leg breakdown.
 _singleNames1D = [("leg1_" + v, "leg1 " + t) for v, t in _vars1D]
 _singleNames2D = [("leg1_" + v, "leg1 " + t) for v, t in _vars2D]
 _singleNamesBreakdown = [("leg1_" + v, "leg1 " + t) for v, t in _vars1D[:2]]
 hltTauTriggerPostProcessorSingleTau = hltTauTriggerPostProcessorTwoLeg.clone(
-    subDirs = cms.untracked.vstring("HLT/Tau/Validation/SingleTau"),
+    subDirs = cms.untracked.vstring(_singleLegDirs),
     efficiency = cms.vstring(
         _entries(_singleNames1D, _efficiencies)
         + _entries(_singleNames2D, _efficiencies)
