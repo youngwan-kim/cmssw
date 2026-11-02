@@ -1,0 +1,19 @@
+<library file="*.cc" name="L1TriggerL1TrackClusterPlugins">
+  <use name="CommonTools/UtilAlgos"/>
+  <use name="DataFormats/Common"/>
+  <use name="DataFormats/HepMCCandidate"/>
+  <use name="DataFormats/L1TCorrelator"/>
+  <use name="DataFormats/L1TrackTrigger"/>
+  <use name="DataFormats/L1Trigger"/>
+  <use name="DataFormats/Math"/>
+  <use name="FWCore/Framework"/>
+  <use name="FWCore/MessageLogger"/>
+  <use name="FWCore/ParameterSet"/>
+  <use name="FWCore/ServiceRegistry"/>
+  <use name="FWCore/Utilities"/>
+  <use name="SimDataFormats/Associations"/>
+  <use name="SimDataFormats/TrackingAnalysis"/>
+  <use name="hls"/>
+  <use name="root"/>
+  <flags EDM_PLUGIN="1"/>
+</library>
