@@ -134,9 +134,12 @@ fragment.load("HLTrigger/Configuration/HLT_75e33/paths/HLT_Ele115_NonIso_L1Seede
 fragment.load("HLTrigger/Configuration/HLT_75e33/paths/HLT_Ele26_WP70_L1Seeded_cfi")
 fragment.load("HLTrigger/Configuration/HLT_75e33/paths/HLT_Ele32_WPTight_L1Seeded_cfi")
 fragment.load("HLTrigger/Configuration/HLT_75e33/paths/HLT_Ele30_WPTight_L1Seeded_LooseDeepTauPFTauHPS30_eta2p1_CrossL1_cfi")
+fragment.load("HLTrigger/Configuration/HLT_75e33/paths/HLT_Ele30_WPTight_L1Seeded_MediumPFPuppiParTTauh30_eta2p1_CrossL1_cfi")
 fragment.load("HLTrigger/Configuration/HLT_75e33/paths/HLT_IsoMu20_eta2p1_LooseDeepTauPFTauHPS27_eta2p1_CrossL1_cfi")
+fragment.load("HLTrigger/Configuration/HLT_75e33/paths/HLT_IsoMu20_eta2p1_MediumPFPuppiParTTauh27_eta2p1_CrossL1_cfi")
 fragment.load("HLTrigger/Configuration/HLT_75e33/paths/HLT_IsoMu24_FromL1TkMuon_cfi")
 fragment.load("HLTrigger/Configuration/HLT_75e33/paths/HLT_LooseDeepTauPFTauHPS150_L1NN_eta2p1_cfi")
+fragment.load("HLTrigger/Configuration/HLT_75e33/paths/HLT_MediumPFPuppiParTTauh150_L1NN_eta2p1_cfi")
 fragment.load("HLTrigger/Configuration/HLT_75e33/paths/HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_FromL1TkMuon_cfi")
 fragment.load("HLTrigger/Configuration/HLT_75e33/paths/HLT_Mu37_Mu27_FromL1TkMuon_cfi")
 fragment.load("HLTrigger/Configuration/HLT_75e33/paths/HLT_Mu50_FromL1TkMuon_cfi")
@@ -290,6 +293,7 @@ fragment.schedule = cms.Schedule(*[
 
     fragment.HLT_Ele32_WPTight_L1Seeded,
     fragment.HLT_Ele30_WPTight_L1Seeded_LooseDeepTauPFTauHPS30_eta2p1_CrossL1,
+    fragment.HLT_Ele30_WPTight_L1Seeded_MediumPFPuppiParTTauh30_eta2p1_CrossL1,
     fragment.HLT_Ele115_NonIso_L1Seeded,
     fragment.HLT_Ele26_WP70_L1Seeded,
     fragment.HLT_Photon108EB_TightID_TightIso_L1Seeded,
@@ -301,7 +305,9 @@ fragment.schedule = cms.Schedule(*[
     fragment.HLT_DoubleMediumChargedIsoPFTauHPS40_eta2p1,
     fragment.HLT_DoubleMediumDeepTauPFTauHPS35_eta2p1,
     fragment.HLT_IsoMu20_eta2p1_LooseDeepTauPFTauHPS27_eta2p1_CrossL1,
+    fragment.HLT_IsoMu20_eta2p1_MediumPFPuppiParTTauh27_eta2p1_CrossL1,
     fragment.HLT_LooseDeepTauPFTauHPS150_L1NN_eta2p1,
+    fragment.HLT_MediumPFPuppiParTTauh150_L1NN_eta2p1,
     fragment.HLT_DoubleMediumPFPuppiParTTauh30_eta2p1,
 
     fragment.HLTriggerFinalPath,

@@ -52,8 +52,11 @@ hltTriggerObjP4Table = cms.EDProducer(
         "HLT_DoubleMediumChargedIsoPFTauHPS40_eta2p1",
         "HLT_DoubleMediumDeepTauPFTauHPS35_eta2p1",
         "HLT_DoubleMediumPFPuppiParTTauh30_eta2p1",
+        "HLT_MediumPFPuppiParTTauh150_L1NN_eta2p1",
         "HLT_IsoMu20_eta2p1_LooseDeepTauPFTauHPS27_eta2p1_CrossL1",
-        "HLT_Ele30_WPTight_L1Seeded_LooseDeepTauPFTauHPS30_eta2p1_CrossL1"
+        "HLT_IsoMu20_eta2p1_MediumPFPuppiParTTauh27_eta2p1_CrossL1",
+        "HLT_Ele30_WPTight_L1Seeded_LooseDeepTauPFTauHPS30_eta2p1_CrossL1",
+        "HLT_Ele30_WPTight_L1Seeded_MediumPFPuppiParTTauh30_eta2p1_CrossL1"
     ),
 
     # Extra HLT filter labels whose passing objects are also included in the
